@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Forecasting System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "weather-blue": "#3B82F6",
+              "weather-gray": "#6B7280",
+            },
+          },
+        },
+      };
+    </script>
+    <style type="text/tailwindcss">
+      @layer components {
+        /* Custom styles for weather app */
+        .tab-button {
+          @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors;
+        }
+        .tab-button.active {
+          @apply bg-weather-blue text-white hover:bg-blue-600 hover:text-white;
+        }
+
+        .tab-content {
+          @apply min-h-96;
+        }
+
+        .weather-card {
+          @apply bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow cursor-pointer;
+        }
+        .hourly-row {
+          @apply bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow cursor-pointer flex items-center justify-between;
+        }
+
+        .aqi-badge {
+          @apply px-2 py-1 rounded-full text-xs font-medium;
+        }
+        .aqi-good {
+          @apply bg-green-100 text-green-800;
+        }
+        .aqi-moderate {
+          @apply bg-yellow-100 text-yellow-800;
+        }
+        .aqi-usg {
+          @apply bg-orange-100 text-orange-800;
+        }
+        .aqi-unhealthy {
+          @apply bg-red-100 text-red-800;
+        }
+        .aqi-very-unhealthy {
+          @apply bg-purple-100 text-purple-800;
+        }
+        .aqi-hazardous {
+          @apply bg-red-200 text-red-900;
+        }
+
+        .advisor-card {
+          @apply bg-white rounded-lg shadow-sm border p-4;
+        }
+        .advisor-good {
+          @apply border-l-4 border-green-500;
+        }
+        .advisor-caution {
+          @apply border-l-4 border-yellow-500;
+        }
+        .advisor-not-ideal {
+          @apply border-l-4 border-red-500;
+        }
+
+        .weather-icon {
+          @apply w-8 h-8;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+      <div class="max-w-7xl mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+          <h1 class="text-2xl font-bold text-gray-900">Weather Forecast</h1>
+          <div class="flex items-center space-x-4">
+            <!-- Enhanced location input with GPS button and better placeholder -->
+            <div class="relative flex items-center">
+              <input
+                type="text"
+                id="cityInput"
+                placeholder="City, State, Country or Postal Code..."
+                class="px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-weather-blue focus:border-transparent w-64"
+              />
+              <button
+                id="useLocationBtn"
+                class="absolute right-2 p-1 text-gray-400 hover:text-weather-blue transition-colors"
+                title="Use my current location"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+              </button>
+              <div
+                id="cityResults"
+                class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-10 max-h-64 overflow-y-auto"
+              ></div>
+            </div>
+            <input
+              type="date"
+              id="dateInput"
+              class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-weather-blue focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex">
+        <!-- Main Content -->
+        <div class="flex-1">
+          <!-- Tab Navigation -->
+          <nav class="flex space-x-1 mb-6">
+            <button
+              id="hourlyTab"
+              class="tab-button active px-4 py-2 rounded-lg font-medium"
+            >
+              Hourly (Today)
+            </button>
+            <button
+              id="dailyTab"
+              class="tab-button px-4 py-2 rounded-lg font-medium"
+            >
+              Daily (16-Day)
+            </button>
+            <button
+              id="advisorsTab"
+              class="tab-button px-4 py-2 rounded-lg font-medium"
+            >
+              Activity Advisors
+            </button>
+          </nav>
+
+          <!-- Tab Content -->
+          <div id="hourlyContent" class="tab-content">
+            <div id="hourlyLoading" class="text-center py-8 hidden">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-weather-blue mx-auto"
+              ></div>
+              <p class="mt-2 text-gray-600">Loading hourly forecast...</p>
+            </div>
+            <div id="hourlyData" class="space-y-2"></div>
+          </div>
+
+          <div id="dailyContent" class="tab-content hidden">
+            <div id="dailyLoading" class="text-center py-8 hidden">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-weather-blue mx-auto"
+              ></div>
+              <p class="mt-2 text-gray-600">Loading daily forecast...</p>
+            </div>
+            <div
+              id="dailyData"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+            ></div>
+          </div>
+
+          <div id="advisorsContent" class="tab-content hidden">
+            <div id="advisorsLoading" class="text-center py-8 hidden">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-weather-blue mx-auto"
+              ></div>
+              <p class="mt-2 text-gray-600">Loading activity advisors...</p>
+            </div>
+            <div id="advisorsData">
+              <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-4">Today</h3>
+                <div
+                  id="todayAdvisors"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                ></div>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold mb-4">Tomorrow</h3>
+                <div
+                  id="tomorrowAdvisors"
+                  class="grid grid-cols-1 md:grid-cols-2 gap-4"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Climate Sidebar -->
+        <div id="climateSidebar" class="w-80 ml-6 hidden">
+          <div class="bg-white rounded-lg shadow-sm border p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Climate Context</h3>
+              <button
+                id="closeSidebar"
+                class="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+            <div id="climateData"></div>
+            <p class="text-xs text-gray-500 mt-4">
+              Historical averages, not a forecast.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hour Detail Drawer -->
+    <div
+      id="hourDrawer"
+      class="fixed inset-y-0 right-0 w-96 bg-white shadow-xl transform translate-x-full transition-transform duration-300 z-50"
+    >
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Hour Details</h3>
+          <button
+            id="closeHourDrawer"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+        <div id="hourDrawerContent"></div>
+      </div>
+    </div>
+
+    <!-- Day Detail Drawer -->
+    <div
+      id="dayDrawer"
+      class="fixed inset-y-0 right-0 w-96 bg-white shadow-xl transform translate-x-full transition-transform duration-300 z-50"
+    >
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Day Details</h3>
+          <button id="closeDayDrawer" class="text-gray-400 hover:text-gray-600">
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+        <div id="dayDrawerContent"></div>
+      </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div
+      id="errorToast"
+      class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50"
+    >
+      <div class="flex items-center">
+        <svg
+          class="w-5 h-5 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+        <span id="errorMessage"></span>
+      </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

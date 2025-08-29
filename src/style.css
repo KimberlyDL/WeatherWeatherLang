@@ -1,0 +1,61 @@
+/* Custom styles for weather app */
+.tab-button {
+  @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors;
+}
+
+.tab-button.active {
+  @apply bg-weather-blue text-white hover:bg-blue-600 hover:text-white;
+}
+
+.tab-content {
+  @apply min-h-96;
+}
+
+.weather-card {
+  @apply bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow cursor-pointer;
+}
+
+.hourly-row {
+  @apply bg-white rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow cursor-pointer flex items-center justify-between;
+}
+
+.aqi-badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.aqi-good {
+  @apply bg-green-100 text-green-800;
+}
+.aqi-moderate {
+  @apply bg-yellow-100 text-yellow-800;
+}
+.aqi-usg {
+  @apply bg-orange-100 text-orange-800;
+}
+.aqi-unhealthy {
+  @apply bg-red-100 text-red-800;
+}
+.aqi-very-unhealthy {
+  @apply bg-purple-100 text-purple-800;
+}
+.aqi-hazardous {
+  @apply bg-red-200 text-red-900;
+}
+
+.advisor-card {
+  @apply bg-white rounded-lg shadow-sm border p-4;
+}
+
+.advisor-good {
+  @apply border-l-4 border-green-500;
+}
+.advisor-caution {
+  @apply border-l-4 border-yellow-500;
+}
+.advisor-not-ideal {
+  @apply border-l-4 border-red-500;
+}
+
+.weather-icon {
+  @apply w-8 h-8;
+}
