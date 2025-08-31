@@ -15,38 +15,67 @@ export function renderHourlyData(hourlyData, aqiData, selectedDate) {
     return;
   }
 
-  const html = hourlyData.time
-    .map((time, index) => {
-      const temp = Math.round(hourlyData.temperature_2m[index]);
-      const precipProb = hourlyData.precipitation_probability[index];
-      const precipMm = hourlyData.precipitation[index];
-      const cloudCover = hourlyData.cloud_cover[index];
-      const windSpeed = Math.round(hourlyData.wind_speed_10m[index]);
-      const weatherCode = hourlyData.weather_code[index];
-      const icon = getWeatherIcon(weatherCode);
+  const currentHour = new Date().getHours();
+  const currentTemp = Math.round(
+    hourlyData.temperature_2m[currentHour] || hourlyData.temperature_2m[0]
+  );
+  const currentWeatherCode =
+    hourlyData.weather_code[currentHour] || hourlyData.weather_code[0];
+  const currentIcon = getWeatherIcon(currentWeatherCode);
+  const currentDescription = getWeatherDescription(currentWeatherCode);
 
-      let aqiBadge = "";
-      if (aqiData && aqiData.us_aqi && aqiData.us_aqi[index] !== undefined) {
-        const aqi = aqiData.us_aqi[index];
-        const { category, class: aqiClass } = getAQICategory(aqi);
-        const dominantPollutant = getDominantPollutant({
-          pm25: aqiData.us_aqi_pm2_5?.[index],
-          pm10: aqiData.us_aqi_pm10?.[index],
-          ozone: aqiData.us_aqi_ozone?.[index],
-          no2: aqiData.us_aqi_nitrogen_dioxide?.[index],
-          so2: aqiData.us_aqi_sulphur_dioxide?.[index],
-          co: aqiData.us_aqi_carbon_monoxide?.[index],
-        });
+  const currentWeatherSummary = `
+    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800">Current Weather</h3>
+          <p class="text-sm text-gray-600">${formatDateLong(selectedDate)}</p>
+        </div>
+        <div class="text-right">
+          <div class="flex items-center space-x-2">
+            <span class="text-3xl">${currentIcon}</span>
+            <span class="text-2xl font-bold text-gray-800">${currentTemp}°C</span>
+          </div>
+          <p class="text-sm text-gray-600">${currentDescription}</p>
+        </div>
+      </div>
+    </div>
+  `;
 
-        aqiBadge = `
+  const html =
+    currentWeatherSummary +
+    hourlyData.time
+      .map((time, index) => {
+        const temp = Math.round(hourlyData.temperature_2m[index]);
+        const precipProb = hourlyData.precipitation_probability[index];
+        const precipMm = hourlyData.precipitation[index];
+        const cloudCover = hourlyData.cloud_cover[index];
+        const windSpeed = Math.round(hourlyData.wind_speed_10m[index]);
+        const weatherCode = hourlyData.weather_code[index];
+        const icon = getWeatherIcon(weatherCode);
+
+        let aqiBadge = "";
+        if (aqiData && aqiData.us_aqi && aqiData.us_aqi[index] !== undefined) {
+          const aqi = aqiData.us_aqi[index];
+          const { category, class: aqiClass } = getAQICategory(aqi);
+          const dominantPollutant = getDominantPollutant({
+            pm25: aqiData.us_aqi_pm2_5?.[index],
+            pm10: aqiData.us_aqi_pm10?.[index],
+            ozone: aqiData.us_aqi_ozone?.[index],
+            no2: aqiData.us_aqi_nitrogen_dioxide?.[index],
+            so2: aqiData.us_aqi_sulphur_dioxide?.[index],
+            co: aqiData.us_aqi_carbon_monoxide?.[index],
+          });
+
+          aqiBadge = `
                 <div class="flex items-center space-x-2">
                     <span class="aqi-badge ${aqiClass}">AQI ${aqi}</span>
                     <span class="text-xs text-gray-500">${dominantPollutant}</span>
                 </div>
             `;
-      }
+        }
 
-      return `
+        return `
             <div class="hourly-row" onclick="app.showHourDetails(${index})">
                 <div class="flex items-center space-x-4">
                     <div class="text-sm font-medium w-16">${formatTime(
@@ -64,8 +93,8 @@ export function renderHourlyData(hourlyData, aqiData, selectedDate) {
                 </div>
             </div>
         `;
-    })
-    .join("");
+      })
+      .join("");
 
   container.innerHTML = html;
 }
@@ -79,21 +108,45 @@ export function renderDailyData(dailyData) {
     return;
   }
 
-  const html = dailyData.time
-    .map((date, index) => {
-      const tempMin = Math.round(dailyData.temperature_2m_min[index]);
-      const tempMax = Math.round(dailyData.temperature_2m_max[index]);
-      const precipSum = dailyData.precipitation_sum[index];
-      const precipProbMax = dailyData.precipitation_probability_max[index];
-      const windMax = Math.round(dailyData.wind_speed_10m_max[index]);
-      const windGust = Math.round(dailyData.wind_gusts_10m_max[index]);
-      const sunshineHours = Math.round(
-        dailyData.sunshine_duration[index] / 3600
-      );
+  const todayTemp = Math.round(dailyData.temperature_2m_max[0]);
+  const todayTempMin = Math.round(dailyData.temperature_2m_min[0]);
+  const todayPrecip = dailyData.precipitation_sum[0];
+  const todayPrecipProb = dailyData.precipitation_probability_max[0];
 
-      const aqiAvailable = index <= 5; // AQI available for first 5-7 days
+  const todayWeatherSummary = `
+    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800">Today's Forecast</h3>
+          <p class="text-sm text-gray-600">${formatDateLong(
+            dailyData.time[0]
+          )}</p>
+        </div>
+        <div class="text-right">
+          <div class="text-2xl font-bold text-gray-800">${todayTempMin}° - ${todayTemp}°C</div>
+          <p class="text-sm text-gray-600">${todayPrecip}mm rain (${todayPrecipProb}% chance)</p>
+        </div>
+      </div>
+    </div>
+  `;
 
-      return `
+  const html =
+    todayWeatherSummary +
+    dailyData.time
+      .map((date, index) => {
+        const tempMin = Math.round(dailyData.temperature_2m_min[index]);
+        const tempMax = Math.round(dailyData.temperature_2m_max[index]);
+        const precipSum = dailyData.precipitation_sum[index];
+        const precipProbMax = dailyData.precipitation_probability_max[index];
+        const windMax = Math.round(dailyData.wind_speed_10m_max[index]);
+        const windGust = Math.round(dailyData.wind_gusts_10m_max[index]);
+        const sunshineHours = Math.round(
+          dailyData.sunshine_duration[index] / 3600
+        );
+
+        const aqiAvailable = index <= 5; // AQI available for first 5-7 days
+
+        return `
             <div class="weather-card" onclick="app.showDayDetails(${index})">
                 <div class="mb-3">
                     <div class="font-semibold">${formatDate(date)}</div>
@@ -127,8 +180,8 @@ export function renderDailyData(dailyData) {
                 </div>
             </div>
         `;
-    })
-    .join("");
+      })
+      .join("");
 
   container.innerHTML = html;
 }
@@ -354,49 +407,319 @@ export function renderDayDetails(dayData, aqiData) {
     `;
 }
 
-export function renderClimateData(climateData, month) {
-  const container = document.getElementById("climateData");
+// export function renderClimateData(climateData, currentCity) {
+//   const container = document.getElementById("climateData");
 
+//   if (!climateData) {
+//     container.innerHTML =
+//       '<div class="text-center text-gray-500">No climate data available</div>';
+//     return;
+//   }
+
+//   const monthNames = [
+//     "January",
+//     "February",
+//     "March",
+//     "April",
+//     "May",
+//     "June",
+//     "July",
+//     "August",
+//     "September",
+//     "October",
+//     "November",
+//     "December",
+//   ];
+
+//   const tempMax = climateData.temperature_2m_max || [];
+//   const tempMin = climateData.temperature_2m_min || [];
+//   const precipSum = climateData.precipitation_sum || [];
+//   const radiation = climateData.shortwave_radiation_sum || [];
+
+//   // Calculate averages safely
+//   const avgTempMax =
+//     tempMax.length > 0
+//       ? Math.round(tempMax.reduce((a, b) => a + b, 0) / tempMax.length)
+//       : 0;
+//   const avgTempMin =
+//     tempMin.length > 0
+//       ? Math.round(tempMin.reduce((a, b) => a + b, 0) / tempMin.length)
+//       : 0;
+//   const totalPrecip =
+//     precipSum.length > 0 ? Math.round(precipSum.reduce((a, b) => a + b, 0)) : 0;
+//   const avgSunshine =
+//     radiation.length > 0
+//       ? Math.round(
+//           radiation.reduce((a, b) => a + b, 0) / radiation.length / 1000
+//         )
+//       : 0;
+
+//   const currentMonth = new Date().getMonth();
+
+//   let locationName = "Selected Location";
+//   if (currentCity) {
+//     if (currentCity.isGPS) {
+//       locationName = currentCity.name || "Current Location";
+//       if (currentCity.admin1) locationName += `, ${currentCity.admin1}`;
+//       if (currentCity.country) locationName += `, ${currentCity.country}`;
+//       locationName += " (GPS)";
+//     } else {
+//       locationName = `${currentCity.name}, ${currentCity.country}`;
+//     }
+//   }
+
+//   container.innerHTML = `
+//     <div class="space-y-6">
+//       <div class="text-center">
+//         <h4 class="text-xl font-semibold mb-2">Climate Averages</h4>
+//         <p class="text-sm text-gray-600">${locationName}</p>
+//         <p class="text-xs text-gray-500">Historical data (1991-2020)</p>
+//       </div>
+
+//       <div class="grid grid-cols-2 gap-4">
+//         <div class="bg-blue-50 p-4 rounded-lg text-center">
+//           <div class="text-2xl font-bold text-blue-600">${avgTempMax}°C</div>
+//           <div class="text-sm text-gray-600">Avg High</div>
+//         </div>
+//         <div class="bg-cyan-50 p-4 rounded-lg text-center">
+//           <div class="text-2xl font-bold text-cyan-600">${avgTempMin}°C</div>
+//           <div class="text-sm text-gray-600">Avg Low</div>
+//         </div>
+//         <div class="bg-green-50 p-4 rounded-lg text-center">
+//           <div class="text-2xl font-bold text-green-600">${totalPrecip}mm</div>
+//           <div class="text-sm text-gray-600">Annual Rain</div>
+//         </div>
+//         <div class="bg-yellow-50 p-4 rounded-lg text-center">
+//           <div class="text-2xl font-bold text-yellow-600">${avgSunshine}h</div>
+//           <div class="text-sm text-gray-600">Daily Sun</div>
+//         </div>
+//       </div>
+
+//       <div class="space-y-3">
+//         <h5 class="font-medium">Monthly Breakdown</h5>
+//         <div class="space-y-2">
+//           ${tempMax
+//             .slice(0, 12)
+//             .map((maxTemp, index) => {
+//               const minTemp = tempMin[index] || 0;
+//               const precip = precipSum[index] || 0;
+//               const isCurrentMonth = index === currentMonth;
+
+//               return `
+//               <div class="flex items-center justify-between p-2 rounded ${
+//                 isCurrentMonth
+//                   ? "bg-blue-50 border border-blue-200"
+//                   : "hover:bg-gray-50"
+//               }">
+//                 <div class="flex items-center space-x-3">
+//                   <span class="text-sm font-medium w-20 ${
+//                     isCurrentMonth ? "text-blue-700" : ""
+//                   }">${monthNames[index] || `Month ${index + 1}`}</span>
+//                   ${
+//                     isCurrentMonth
+//                       ? '<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Current</span>'
+//                       : ""
+//                   }
+//                 </div>
+//                 <div class="flex items-center space-x-4 text-sm">
+//                   <span class="text-gray-600">${Math.round(
+//                     minTemp
+//                   )}° - ${Math.round(maxTemp)}°C</span>
+//                   <span class="text-gray-500">${Math.round(precip)}mm</span>
+//                 </div>
+//               </div>
+//             `;
+//             })
+//             .join("")}
+//         </div>
+//       </div>
+
+//       <div class="bg-gray-50 p-4 rounded-lg">
+//         <h5 class="font-medium mb-2">About Climate Data</h5>
+//         <div class="text-xs text-gray-600 space-y-1">
+//           <p>• Based on 30-year historical averages (1991-2020)</p>
+//           <p>• Provides context for current weather conditions</p>
+//           <p>• Helps understand seasonal patterns and expectations</p>
+//           <p>• Data from EC_Earth3P_HR climate model</p>
+//         </div>
+//       </div>
+//     </div>
+//   `;
+// }
+
+export function renderClimateData(climateData, currentCity, opts = {}) {
+  const container = document.getElementById("climateData");
+  if (!container) return;
+
+  const isFallback = !!opts.isFallback;
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const now = new Date();
+  const currentMonth = now.getMonth();
+
+  // Location label
+  let locationName = "Selected Location";
+  if (currentCity) {
+    if (currentCity.isGPS) {
+      locationName = currentCity.name || "Current Location";
+      if (currentCity.admin1) locationName += `, ${currentCity.admin1}`;
+      if (currentCity.country) locationName += `, ${currentCity.country}`;
+      locationName += " (GPS)";
+    } else {
+      locationName = `${currentCity.name}, ${currentCity.country ?? ""}`.trim();
+    }
+  }
+
+  if (isFallback) {
+    const { summary, periodLabel = "This period" } = opts;
+    container.innerHTML = `
+      <div class="space-y-6">
+        <div class="text-center">
+          <h4 class="text-xl font-semibold mb-1">Average for this time (proxy)</h4>
+          <p class="text-sm text-gray-600">${locationName}</p>
+          <p class="text-xs text-amber-700 bg-amber-50 inline-block px-2 py-1 rounded mt-1">
+            Using ${periodLabel} forecast as a proxy (climate normals unavailable)
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-blue-50 p-4 rounded-lg text-center">
+            <div class="text-2xl font-bold text-blue-600">${
+              summary.avgHigh ?? 0
+            }°C</div>
+            <div class="text-sm text-gray-600">Avg High</div>
+          </div>
+          <div class="bg-cyan-50 p-4 rounded-lg text-center">
+            <div class="text-2xl font-bold text-cyan-600">${
+              summary.avgLow ?? 0
+            }°C</div>
+            <div class="text-sm text-gray-600">Avg Low</div>
+          </div>
+          <div class="bg-green-50 p-4 rounded-lg text-center">
+            <div class="text-2xl font-bold text-green-600">${
+              summary.totalPrecip ?? 0
+            }mm</div>
+            <div class="text-sm text-gray-600">Total Rain (period)</div>
+          </div>
+          <div class="bg-yellow-50 p-4 rounded-lg text-center">
+            <div class="text-2xl font-bold text-yellow-600">${
+              summary.avgSunshineHours ?? 0
+            }h</div>
+            <div class="text-sm text-gray-600">Avg Sunshine / day</div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h5 class="font-medium mb-1">About this view</h5>
+          <p class="text-xs text-gray-600">
+            This is a quick summary based on the upcoming forecast (not long-term climate normals). 
+            It gives you a sense of typical conditions for planning right now.
+          </p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // --- Climate normals path (historical averages) ---
   if (!climateData) {
     container.innerHTML =
       '<div class="text-center text-gray-500">No climate data available</div>';
     return;
   }
 
-  const avgTempMax = Math.round(
-    climateData.temperature_2m_max.reduce((a, b) => a + b, 0) /
-      climateData.temperature_2m_max.length
-  );
-  const avgTempMin = Math.round(
-    climateData.temperature_2m_min.reduce((a, b) => a + b, 0) /
-      climateData.temperature_2m_min.length
-  );
-  const totalPrecip = Math.round(
-    climateData.precipitation_sum.reduce((a, b) => a + b, 0)
-  );
-  const avgSunshine = Math.round(
-    climateData.shortwave_radiation_sum.reduce((a, b) => a + b, 0) /
-      climateData.shortwave_radiation_sum.length /
-      1000
-  );
+  const tempMax = climateData.temperature_2m_max || [];
+  const tempMin = climateData.temperature_2m_min || [];
+  const precipSum = climateData.precipitation_sum || [];
+  const radiation = climateData.shortwave_radiation_sum || [];
+
+  const avg = (arr) =>
+    arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+  const total = (arr) => Math.round(arr.reduce((a, b) => a + b, 0));
+  const avgSunH = radiation.length
+    ? Math.round(radiation.reduce((a, b) => a + b, 0) / radiation.length / 1000)
+    : 0;
+
+  const avgTempMax = avg(tempMax);
+  const avgTempMin = avg(tempMin);
+  const totalPrecip = total(precipSum);
+  const avgSunshine = avgSunH;
 
   container.innerHTML = `
-        <div class="space-y-3">
-            <h4 class="font-medium">Typical for ${month}</h4>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span>Temperature Range</span>
-                    <span>${avgTempMin}° - ${avgTempMax}°C</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Monthly Rain</span>
-                    <span>${totalPrecip}mm</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Daily Sunshine</span>
-                    <span>${avgSunshine}h avg</span>
-                </div>
-            </div>
+    <div class="space-y-6">
+      <div class="text-center">
+        <h4 class="text-xl font-semibold mb-1">Climate Averages</h4>
+        <p class="text-sm text-gray-600">${locationName}</p>
+        <p class="text-xs text-gray-500">Historical data (1991–2020)</p>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-blue-50 p-4 rounded-lg text-center">
+          <div class="text-2xl font-bold text-blue-600">${avgTempMax}°C</div>
+          <div class="text-sm text-gray-600">Avg High</div>
         </div>
-    `;
+        <div class="bg-cyan-50 p-4 rounded-lg text-center">
+          <div class="text-2xl font-bold text-cyan-600">${avgTempMin}°C</div>
+          <div class="text-sm text-gray-600">Avg Low</div>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg text-center">
+          <div class="text-2xl font-bold text-green-600">${totalPrecip}mm</div>
+          <div class="text-sm text-gray-600">Annual Rain</div>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded-lg text-center">
+          <div class="text-2xl font-bold text-yellow-600">${avgSunshine}h</div>
+          <div class="text-sm text-gray-600">Daily Sun</div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <h5 class="font-medium">Monthly Breakdown</h5>
+        <div class="space-y-2">
+          ${Array.from({ length: Math.min(12, tempMax.length) })
+            .map((_, i) => {
+              const isCurrent = i === currentMonth;
+              const min = Math.round(tempMin[i] ?? 0);
+              const max = Math.round(tempMax[i] ?? 0);
+              const pr = Math.round(precipSum[i] ?? 0);
+              return `
+              <div class="flex items-center justify-between p-2 rounded ${
+                isCurrent
+                  ? "bg-blue-50 border border-blue-200"
+                  : "hover:bg-gray-50"
+              }">
+                <div class="flex items-center space-x-3">
+                  <span class="text-sm font-medium w-24 ${
+                    isCurrent ? "text-blue-700" : ""
+                  }">${monthNames[i]}</span>
+                  ${
+                    isCurrent
+                      ? '<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Current</span>'
+                      : ""
+                  }
+                </div>
+                <div class="flex items-center space-x-4 text-sm">
+                  <span class="text-gray-600">${min}° - ${max}°C</span>
+                  <span class="text-gray-500">${pr}mm</span>
+                </div>
+              </div>
+            `;
+            })
+            .join("")}
+        </div>
+      </div>
+    </div>
+  `;
 }

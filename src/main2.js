@@ -94,7 +94,7 @@ class WeatherApp {
   async loadDefaultCity() {
     try {
       // Default to New York
-      const cities = await geocodeCity("Manila");
+      const cities = await geocodeCity("New York");
       if (cities.length > 0) {
         this.currentCity = cities[0];
         document.getElementById("cityInput").value = this.currentCity.name;
@@ -388,7 +388,7 @@ class WeatherApp {
   }
 
   closeSidebar() {
-    this.switchTab("hourly");
+    document.getElementById("climateSidebar").classList.add("hidden");
   }
 
   showLoading(loadingId) {
@@ -426,6 +426,7 @@ class WeatherApp {
         coords.longitude
       );
 
+      // Create city object with GPS coordinates
       const gpsCity = {
         ...locationData,
         latitude: coords.latitude,
@@ -435,27 +436,10 @@ class WeatherApp {
 
       this.currentCity = gpsCity;
 
-      let displayName = "Current Location";
-
-      if (locationData && locationData.name) {
-        displayName = locationData.name;
-
-        // Add administrative divisions if available
-        if (locationData.admin2 && locationData.admin2 !== locationData.name) {
-          displayName += `, ${locationData.admin2}`;
-        }
-        if (
-          locationData.admin1 &&
-          locationData.admin1 !== locationData.admin2 &&
-          locationData.admin1 !== locationData.name
-        ) {
-          displayName += `, ${locationData.admin1}`;
-        }
-        if (locationData.country) {
-          displayName += `, ${locationData.country}`;
-        }
+      let displayName = locationData.name || "Current Location";
+      if (locationData.admin1) {
+        displayName += `, ${locationData.admin1}`;
       }
-
       displayName += " (GPS)";
 
       document.getElementById("cityInput").value = displayName;
@@ -469,62 +453,14 @@ class WeatherApp {
     }
   }
 
-  // async loadClimateData(latitude, longitude) {
-  //   this.showLoading("climateLoading");
-
-  //   try {
-  //     const climateData = await getClimate(latitude, longitude);
-  //     this.climateData = climateData;
-
-  //     renderClimateData(climateData, this.currentCity);
-  //   } finally {
-  //     this.hideLoading("climateLoading");
-  //   }
-  // }
-
   async loadClimateData(latitude, longitude) {
     this.showLoading("climateLoading");
 
     try {
-      // Try climate normals first
       const climateData = await getClimate(latitude, longitude);
+      this.climateData = climateData;
 
-      if (
-        climateData &&
-        (climateData.temperature_2m_max?.length ||
-          climateData.temperature_2m_min?.length)
-      ) {
-        this.climateData = climateData;
-        renderClimateData(climateData, this.currentCity, { isFallback: false });
-        return;
-      }
-
-      // Fallback: use forecast (next 16 days) as a proxy for "typical now"
-      const daily16 = await getDailyWeather(latitude, longitude, 16);
-
-      // Safe guards
-      const tmax = daily16?.temperature_2m_max || [];
-      const tmin = daily16?.temperature_2m_min || [];
-      const precip = daily16?.precipitation_sum || [];
-      const sun = daily16?.sunshine_duration || [];
-
-      const avg = (arr) =>
-        arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-      const sum = (arr) => arr.reduce((a, b) => a + b, 0);
-
-      const fallbackSummary = {
-        avgHigh: Math.round(avg(tmax)),
-        avgLow: Math.round(avg(tmin)),
-        totalPrecip: Math.round(sum(precip)),
-        avgSunshineHours: Math.round(avg(sun) / 3600), // seconds→hours
-      };
-
-      // Render with explicit fallback flag (renderer will adjust the layout)
-      renderClimateData(null, this.currentCity, {
-        isFallback: true,
-        summary: fallbackSummary,
-        periodLabel: "Next 16 Days (proxy)",
-      });
+      renderClimateData(climateData, this.currentCity);
     } finally {
       this.hideLoading("climateLoading");
     }

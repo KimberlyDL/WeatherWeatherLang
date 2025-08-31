@@ -84,10 +84,6 @@
         .weather-icon {
           @apply w-8 h-8;
         }
-
-        .execution-log-panel {
-          @apply bg-white rounded-lg shadow-sm border p-4;
-        }
       }
     </style>
   </head>
@@ -96,7 +92,7 @@
     <header class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold text-gray-900">Weather Weather Lang</h1>
+          <h1 class="text-2xl font-bold text-gray-900">Weather Forecast</h1>
           <div class="flex items-center space-x-4">
             <!-- Enhanced location input with GPS button and better placeholder -->
             <div class="relative flex items-center">
@@ -176,14 +172,6 @@
             >
               Activity Advisors
             </button>
-            <!-- Added execution log panel toggle button -->
-            <button
-              id="toggleExecutionLog"
-              class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              onclick="window.executionLogger?.toggle()"
-            >
-              📊 Execution Log
-            </button>
           </nav>
 
           <!-- Tab Content -->
@@ -195,29 +183,6 @@
               <p class="mt-2 text-gray-600">Loading hourly forecast...</p>
             </div>
             <div id="hourlyData" class="space-y-2"></div>
-
-            <button
-              id="testErrorBtn"
-              type="button"
-              class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
-              title="Trigger a test error toast"
-            >
-              <!-- exclamation icon -->
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Test Error
-            </button>
           </div>
 
           <div id="dailyContent" class="tab-content hidden">
@@ -231,57 +196,6 @@
               id="dailyData"
               class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
             ></div>
-          </div>
-
-          <div id="climateContent" class="tab-content hidden">
-            <div id="climateLoading" class="text-center py-8 hidden">
-              <div
-                class="animate-spin rounded-full h-8 w-8 border-b-2 border-weather-blue mx-auto"
-              ></div>
-              <p class="mt-2 text-gray-600">Loading climate data...</p>
-            </div>
-
-            <!-- keep ids so JS continues to work -->
-            <div
-              id="climateSidebar"
-              class="w-full max-w-none bg-white rounded-lg shadow-sm border p-6"
-            >
-              <div class="flex items-center justify-between mb-4">
-                <div>
-                  <h3 class="text-lg font-semibold">Typical for this time</h3>
-                  <p class="text-xs text-gray-500">
-                    Historical averages when available, or a forecast-based
-                    proxy.
-                  </p>
-                </div>
-                <!-- this button already routes back to Hourly in your JS -->
-                <button
-                  id="closeSidebar"
-                  class="text-gray-400 hover:text-gray-600"
-                  title="Back to Hourly"
-                >
-                  <svg
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-
-              <div id="climateData"></div>
-
-              <p class="text-xs text-gray-500 mt-4">
-                Historical averages, not a forecast.
-              </p>
-            </div>
           </div>
 
           <div id="advisorsContent" class="tab-content hidden">
@@ -310,49 +224,70 @@
           </div>
         </div>
 
-        <!-- Added execution log panel -->
-        <div id="executionLogPanel" class="w-80 ml-6 hidden">
-          <div class="bg-white rounded-lg shadow-sm border">
-            <div class="p-4 border-b">
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold">Execution Log</h3>
-                <div class="flex items-center space-x-2">
-                  <button
-                    onclick="window.executionLogger?.clear()"
-                    class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"
-                  >
-                    Clear
-                  </button>
-                  <button
-                    onclick="window.executionLogger?.toggle()"
-                    class="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      ></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <p class="text-xs text-gray-500 mt-1">
-                Real-time async operation tracking
-              </p>
+        <!-- Climate Sidebar -->
+
+        <!-- <div id="climateSidebar" class="w-80 ml-6 hidden">
+          <div class="bg-white rounded-lg shadow-sm border p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Climate Context</h3>
+              <button
+                id="closeSidebar"
+                class="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+              </button>
             </div>
-            <div id="executionLogContainer" class="max-h-96 overflow-y-auto">
-              <div class="p-4 text-center text-gray-500 text-sm">
-                No operations yet. Start by searching for a city or changing
-                tabs.
-              </div>
+            <div id="climateData"></div>
+            <p class="text-xs text-gray-500 mt-4">
+              Historical averages, not a forecast.
+            </p>
+          </div>
+        </div> -->
+
+        <div id="climateContent" class="tab-content hidden">
+          <!-- Keep original ID so data still flows -->
+          <div
+            id="climateSidebar"
+            class="bg-white rounded-lg shadow-sm border p-6 max-w-5xl"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Climate Context</h3>
+              <button
+                id="closeSidebar"
+                class="text-gray-400 hover:text-gray-600"
+                title="Back to Hourly"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  ></path>
+                </svg>
+              </button>
             </div>
+            <div id="climateData"></div>
+            <p class="text-xs text-gray-500 mt-4">
+              Historical averages, not a forecast.
+            </p>
           </div>
         </div>
       </div>
@@ -418,11 +353,70 @@
     </div>
 
     <!-- Error Toast -->
-    <div
-      id="toastStack"
-      class="fixed bottom-4 right-4 z-50 flex flex-col-reverse items-end gap-3 pointer-events-none"
-    ></div>
+    <!-- <div
+      id="errorToast"
+      class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50"
+    >
+      <div class="flex items-center">
+        <svg
+          class="w-5 h-5 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+        <span id="errorMessage"></span>
+      </div>
+    </div> -->
 
+    <div
+      id="errorToast"
+      role="alert"
+      class="fixed top-4 right-4 z-50 hidden w-auto max-w-sm text-white bg-red-500 rounded-lg shadow-lg transition-all duration-200 ease-out translate-x-0 opacity-100"
+    >
+      <div class="flex items-center px-4 py-3 gap-3">
+        <svg
+          class="w-5 h-5 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span id="errorMessage" class="text-sm"></span>
+        <button
+          type="button"
+          class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-md hover:bg-red-600/30 focus:outline-none"
+          data-dismiss-target="#errorToast"
+          aria-label="Close"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
     <script type="module" src="src/main.js"></script>
     <script>
       // Wire the new Climate tab into the existing tab system without touching main.js
@@ -442,17 +436,6 @@
           window.app?.switchTab("hourly");
         });
       })();
-    </script>
-
-    <script type="module">
-      import { showError } from "./src/utils/ui.js";
-
-      const btn = document.getElementById("testErrorBtn");
-      if (btn) {
-        btn.addEventListener("click", () => {
-          showError("This is a test error message 🔥");
-        });
-      }
     </script>
   </body>
 </html>
